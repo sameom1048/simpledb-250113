@@ -36,4 +36,8 @@ public class Sql {
     public int update() {
         return 3;
     }
+
+    public int delete() {
+        return 4;
+    }
 }
