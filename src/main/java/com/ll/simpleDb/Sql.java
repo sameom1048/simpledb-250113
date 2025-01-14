@@ -1,5 +1,7 @@
 package com.ll.simpleDb;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,34 +10,27 @@ import java.util.Map;
 
 public class Sql {
 
+    private final SimpleDb simpleDb;
     private final StringBuilder sqlBuilder;
 
-    public Sql() {
+    public Sql(SimpleDb simpleDb) {
         this.sqlBuilder = new StringBuilder();
+        this.simpleDb = simpleDb;
     }
-
 
     public Sql append(String sqlLine) {
         this.sqlBuilder.append(sqlLine);
+        this.sqlBuilder.append(" ");
         return this;
     }
 
     public Sql append(String sqlLine, Object... args) {
         this.sqlBuilder.append(sqlLine);
-        for (int i = 0; i < args.length; i++) {
-            sqlBuilder.append(args[i]);
-            if (i < args.length - 1) {
-                sqlBuilder.append(",");
-
-            }
-        }
+        this.sqlBuilder.append(" ");
         return this;
-
     }
 
     public long insert() {
-        Long offset = 0L;
-        this.sqlBuilder.insert(0, this.sqlBuilder.toString());
         return 1;
     }
 
@@ -92,6 +87,7 @@ public class Sql {
     }
 
     public Map<String, Object> selectRow() {
+
         Map<String, Object> row1 = new HashMap<>();
         row1.put("id", 1L);
         row1.put("title", "제목1");
@@ -112,6 +108,10 @@ public class Sql {
     }
 
     public String selectString() {
-        return "제목1";
+        return simpleDb.selectString(sqlBuilder.toString());
+    }
+
+    public Boolean selectBoolean() {
+        return simpleDb.selectBoolean(sqlBuilder.toString());
     }
 }

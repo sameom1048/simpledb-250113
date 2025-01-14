@@ -1,17 +1,15 @@
 package com.ll.simpleDb;
 
-import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.*;
 
-@Getter
-@Setter
 public class SimpleDb {
     private String dbUrl;
     private String dbUser;
     private String dbPassword;
     private Connection connection;
+    @Setter
     private boolean devMode = false;
 
     // 생성자: 데이터베이스 연결 정보 초기화
@@ -31,65 +29,45 @@ public class SimpleDb {
         }
     }
 
-
-    // SQL 실행 (DDL, DML 등 반환값이 없는 쿼리)
-    public void run(String sql) {
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.executeUpdate();
-            if (devMode) {
-                System.out.println("SQL 실행 완료: " + sql);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("SQL 실행 실패: " + e.getMessage());
-        }
+    public boolean selectBoolean(String sql) {
+        System.out.println("sql : " + sql);
+        return _run(sql, Boolean.class);
     }
 
-    // SQL 실행 (PreparedStatement와 파라미터)
     public void run(String sql, Object... params) {
+        _run(sql, String.class , params);
+    }
+
+    public <T> T _run(String sql, Class<T> type, Object... params) {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            setParams(stmt, params); // 파라미터 설정
-            stmt.executeUpdate();
-            if (devMode) {
-                System.out.println("SQL 실행 완료: " + sql);
+
+            if(sql.startsWith("SELECT")) {
+                ResultSet rs = stmt.executeQuery(); // 실제 반영된 로우 수. insert, update, delete
+                rs.next();
+                if(type == Boolean.class) return (T) (Boolean)rs.getBoolean(1);
+                else if(type == String.class) return (T) rs.getString(1);
             }
+
+            setParams(stmt, params);
+
+            return (T) (Integer)stmt.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("SQL 실행 실패: " + e.getMessage());
         }
     }
 
-    // SELECT 쿼리 실행 (결과 반환)
-    public ResultSet select(String sql, Object... params) {
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            setParams(stmt, params); // 파라미터 설정
-            return stmt.executeQuery(); // 결과 집합 반환
-        } catch (SQLException e) {
-            throw new RuntimeException("SELECT 실행 실패: " + e.getMessage());
-        }
-    }
-
-    // PreparedStatement에 파라미터 바인딩
     private void setParams(PreparedStatement stmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             stmt.setObject(i + 1, params[i]); // '?' 위치에 값 설정
         }
     }
 
-    // 데이터베이스 연결 종료
-    public void close() {
-        if (connection != null) {
-            try {
-                connection.close();
-                if (devMode) {
-                    System.out.println("데이터베이스 연결 종료.");
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("데이터베이스 연결 종료 실패: " + e.getMessage());
-            }
-        }
+    public Sql genSql() {
+        return new Sql(this);
     }
 
-    public Sql genSql() {
-        return new Sql();
+    public String selectString(String sql) {
+        return _run(sql, String.class);
     }
 }
